@@ -104,9 +104,16 @@ if ($CurrentUserStorageAccess)
 {
     # Add storage permissions for current user
     $CurrentUserId = Get-AzContext | ForEach-Object account | ForEach-Object Id
-    if (! (Get-AzRoleAssignment -Scope $storageId -SignInName $CurrentUserId -RoleDefinitionName $StorageRole -Verbose))
+    #getting objectId cause user has no mail ID
+    $CurrentUserId = $CurrentUserId.Replace("@", "_")
+
+    $user = Get-AzADUser -UserPrincipalName "$CurrentUserId#EXT#@infrastructuredutify.onmicrosoft.com"
+
+    $userObjectId = $user | ForEach Id
+
+    if (! (Get-AzRoleAssignment -Scope $storageId -ObjectId $userObjectId -RoleDefinitionName $StorageRole -Verbose))
     {
-        New-AzRoleAssignment -Scope $storageId -SignInName $CurrentUserId -RoleDefinitionName $StorageRole -Verbose
+        New-AzRoleAssignment -Scope $storageId -ObjectId $userObjectId -RoleDefinitionName $StorageRole -Verbose
     }
     else
     {

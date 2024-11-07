@@ -45,7 +45,7 @@ if (! (Get-AzKeyVault -Name $KVName -EA SilentlyContinue))
     {
         New-AzKeyVault -Name $KVName -ResourceGroupName $RGName -Location $Location `
             -EnabledForDeployment -EnabledForTemplateDeployment -EnablePurgeProtection:$EnablePurgeProtection `
-            -EnableRbacAuthorization -Sku Standard -ErrorAction Stop
+            -Sku Standard -ErrorAction Stop
     }
     catch
     {
@@ -61,9 +61,18 @@ if (Get-AzKeyVault -Name $KVName -EA SilentlyContinue)
     try
     {
         $CurrentUserId = Get-AzContext | ForEach-Object account | ForEach-Object Id
-        if (! (Get-AzRoleAssignment -ResourceGroupName $RGName -SignInName $CurrentUserId -RoleDefinitionName $RoleName))
+
+         #getting objectId cause user has no mail ID
+        $CurrentUserId = $CurrentUserId.Replace("@", "_")
+
+        $user = Get-AzADUser -UserPrincipalName "$CurrentUserId#EXT#@infrastructuredutify.onmicrosoft.com"
+
+        $userObjectId = $user | ForEach Id
+
+        if (! (Get-AzRoleAssignment -ResourceGroupName $RGName -ObjectId $userObjectId -RoleDefinitionName $RoleName))
         {
-            New-AzRoleAssignment -ResourceGroupName $RGName -SignInName $CurrentUserId -RoleDefinitionName $RoleName -Verbose
+            New-AzRoleAssignment -ResourceGroupName $RGName -ObjectId $userObjectId -RoleDefinitionName $RoleName -Verbose
+
         }
     }
     catch
